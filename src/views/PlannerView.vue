@@ -24,7 +24,7 @@
           <div class="day-header">
             <div class="flex items-center gap-2">
               <span class="day-label" :class="isToday(day) ? 'today' : ''">{{ day }}</span>
-              <span class="day-date">{{ dayDate(day) }}</span>
+              <span class="day-date">· {{ dayDate(day) }}</span>
               <span v-if="isToday(day)" class="today-badge">Today</span>
             </div>
             <span class="day-kcal" v-if="dayCalories(day) > 0">
@@ -209,8 +209,9 @@ async function confirmArchive() {
 }
 .day-date {
   font-size: 12px;
-  color: #555;
+  color: #666;
   font-weight: 400;
+  margin-left: 4px;
 }
 .day-header {
   display: flex;
