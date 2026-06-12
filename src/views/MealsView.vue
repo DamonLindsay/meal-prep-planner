@@ -88,6 +88,7 @@
               <IonSelectOption value="veg">Vegetable-heavy</IonSelectOption>
               <IonSelectOption value="dairy">Dairy</IonSelectOption>
               <IonSelectOption value="other">Other</IonSelectOption>
+              <IonSelectOption value="takeout">Takeout</IonSelectOption>
             </IonSelect>
           </IonItem>
 
@@ -265,7 +266,8 @@ async function confirmDelete(id: string) {
 
 function catLabel(cat: string) {
   const labels: Record<string, string> = {
-    protein: 'Protein', carb: 'Carb', veg: 'Veg', dairy: 'Dairy', other: 'Other'
+    protein: 'Protein', carb: 'Carb', veg: 'Veg',
+    dairy: 'Dairy', takeout: 'Takeout', other: 'Other'
   }
   return labels[cat] ?? cat
 }
@@ -350,6 +352,7 @@ function catLabel(cat: string) {
 .cat-veg     { border-color: #639922; color: #639922; }
 .cat-dairy   { border-color: #378ADD; color: #378ADD; }
 .cat-other   { border-color: #888780; color: #888780; }
+.cat-takeout { border-color: #ef4444; color: #ef4444; }
 .empty-state {
   text-align: center;
   padding: 3rem 1rem;

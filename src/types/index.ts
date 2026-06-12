@@ -2,7 +2,7 @@ export interface Ingredient {
   name: string
 }
 
-export type MealCategory = 'protein' | 'carb' | 'veg' | 'dairy' | 'other'
+export type MealCategory = 'protein' | 'carb' | 'veg' | 'dairy' | 'takeout' | 'other'
 
 export interface Meal {
   id: string
