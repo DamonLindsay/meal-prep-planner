@@ -77,6 +77,12 @@
             </div>
           </div>
 
+          <div class="add-row">
+            <button class="add-meal-btn" @click="openPicker(day, null)">
+              <IonIcon :icon="addCircleOutline" /> Add a meal
+            </button>
+          </div>
+
         </div>
 
         <div class="flex gap-3 mt-2">
