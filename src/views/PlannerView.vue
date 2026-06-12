@@ -106,9 +106,6 @@
 
         <!-- Actions — current week only -->
         <div v-if="viewingCurrentWeek" class="flex gap-3 mt-2">
-          <button class="action-btn warning flex-1" @click="confirmArchive">
-            <IonIcon :icon="archive" /> Archive week
-          </button>
           <button class="action-btn danger flex-1" @click="confirmClear">
             <IonIcon :icon="trash" /> Clear week
           </button>
@@ -222,17 +219,6 @@ async function confirmClear() {
   await alert.present()
 }
 
-async function confirmArchive() {
-  const alert = await alertController.create({
-    header: 'Archive week',
-    message: 'Saves this week as last week and clears the planner.',
-    buttons: [
-      { text: 'Cancel', role: 'cancel' },
-      { text: 'Archive', handler: () => store.archiveWeek() }
-    ]
-  })
-  await alert.present()
-}
 </script>
 
 <style scoped>

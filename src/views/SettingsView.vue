@@ -38,19 +38,6 @@
 
         <p class="section-label mt-4">Week management</p>
 
-        <IonCard>
-          <IonCardContent>
-            <p class="text-sm text-gray-400 mb-3">
-              Archive this week's plan before starting a new one.
-              Auto-fill will avoid meals from last week.
-            </p>
-            <IonButton expand="block" fill="outline" color="warning" @click="confirmArchive">
-              <IonIcon :icon="archive" slot="start" />
-              Archive this week
-            </IonButton>
-          </IonCardContent>
-        </IonCard>
-
         <p class="section-label mt-4">About</p>
 
         <IonCard>
