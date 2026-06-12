@@ -5,6 +5,13 @@ import { defaultMeals } from '@/data/meals'
 
 const STORAGE_KEY = 'meal-prep-planner'
 
+function getWeekKey(date: Date): string {
+  const d = new Date(date)
+  const day = d.getDay() === 0 ? 6 : d.getDay() - 1
+  d.setDate(d.getDate() - day)
+  return d.toISOString().slice(0, 10)
+}
+
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -24,21 +31,43 @@ export const useMealStore = defineStore('meals', () => {
   const meals = ref<Meal[]>(saved?.meals ?? defaultMeals)
   const currentWeek = ref<WeekPlan>(saved?.currentWeek ?? {})
   const lastWeek = ref<WeekPlan>(saved?.lastWeek ?? {})
+  const weekHistory = ref<Record<string, WeekPlan>>(saved?.weekHistory ?? {})
   const settings = ref<Settings>(saved?.settings ?? {
     calorieGoal: 2000,
     proteinGoal: 150,
     carbGoal: 200,
     fatGoal: 65
   })
+  const lastKnownWeekKey = ref<string>(saved?.lastKnownWeekKey ?? getWeekKey(new Date()))
 
   function persist() {
     saveToStorage({
       meals: meals.value,
       currentWeek: currentWeek.value,
       lastWeek: lastWeek.value,
-      settings: settings.value
+      weekHistory: weekHistory.value,
+      settings: settings.value,
+      lastKnownWeekKey: lastKnownWeekKey.value
     })
   }
+
+  // Auto roll over if week has changed
+  function checkWeekRollover() {
+    const currentKey = getWeekKey(new Date())
+    if (currentKey !== lastKnownWeekKey.value) {
+      // Archive current week into history
+      if (Object.keys(currentWeek.value).length > 0) {
+        weekHistory.value[lastKnownWeekKey.value] = JSON.parse(JSON.stringify(currentWeek.value))
+        lastWeek.value = JSON.parse(JSON.stringify(currentWeek.value))
+      }
+      currentWeek.value = {}
+      lastKnownWeekKey.value = currentKey
+      persist()
+    }
+  }
+
+  // Run rollover check on store init
+  checkWeekRollover()
 
   // Meals
   function addMeal(meal: Meal) {
@@ -64,7 +93,7 @@ export const useMealStore = defineStore('meals', () => {
     return meals.value.find(m => m.id === id)
   }
 
-  // Planner
+  // Planner - current week
   function addMealToDay(day: string, mealId: string) {
     if (!currentWeek.value[day]) currentWeek.value[day] = []
     if (!currentWeek.value[day].includes(mealId)) {
@@ -79,19 +108,20 @@ export const useMealStore = defineStore('meals', () => {
     persist()
   }
 
+  // Planner - last week
   function addMealToLastWeek(day: string, mealId: string) {
-  if (!lastWeek.value[day]) lastWeek.value[day] = []
-  if (!lastWeek.value[day].includes(mealId)) {
-    lastWeek.value[day].push(mealId)
+    if (!lastWeek.value[day]) lastWeek.value[day] = []
+    if (!lastWeek.value[day].includes(mealId)) {
+      lastWeek.value[day].push(mealId)
+    }
+    persist()
   }
-  persist()
-}
 
-function removeMealFromLastWeek(day: string, mealId: string) {
-  if (!lastWeek.value[day]) return
-  lastWeek.value[day] = lastWeek.value[day].filter(id => id !== mealId)
-  persist()
-}
+  function removeMealFromLastWeek(day: string, mealId: string) {
+    if (!lastWeek.value[day]) return
+    lastWeek.value[day] = lastWeek.value[day].filter(id => id !== mealId)
+    persist()
+  }
 
   function clearWeek() {
     currentWeek.value = {}
@@ -99,6 +129,10 @@ function removeMealFromLastWeek(day: string, mealId: string) {
   }
 
   function archiveWeek() {
+    const key = getWeekKey(new Date())
+    if (Object.keys(currentWeek.value).length > 0) {
+      weekHistory.value[key] = JSON.parse(JSON.stringify(currentWeek.value))
+    }
     lastWeek.value = JSON.parse(JSON.stringify(currentWeek.value))
     currentWeek.value = {}
     persist()
@@ -134,8 +168,7 @@ function removeMealFromLastWeek(day: string, mealId: string) {
 
   const weeklyCalories = computed(() =>
     Object.values(currentWeek.value).flat().reduce((sum, id) => {
-      const meal = getMealById(id)
-      return sum + (meal?.calories ?? 0)
+      return sum + (getMealById(id)?.calories ?? 0)
     }, 0)
   )
 
@@ -158,9 +191,10 @@ function removeMealFromLastWeek(day: string, mealId: string) {
   )
 
   return {
-    meals, currentWeek, lastWeek, settings,
+    meals, currentWeek, lastWeek, weekHistory, settings,
     addMeal, updateMeal, deleteMeal, getMealById,
-    addMealToDay, removeMealFromDay, addMealToLastWeek, removeMealFromLastWeek,
+    addMealToDay, removeMealFromDay,
+    addMealToLastWeek, removeMealFromLastWeek,
     clearWeek, archiveWeek, autoFill,
     updateSettings,
     totalMealsThisWeek, weeklyCalories, weeklyProtein, weeklyCarbs, weeklyFat
