@@ -24,6 +24,7 @@
           <div class="day-header">
             <div class="flex items-center gap-2">
               <span class="day-label" :class="isToday(day) ? 'today' : ''">{{ day }}</span>
+              <span class="day-date">{{ dayDate(day) }}</span>
               <span v-if="isToday(day)" class="today-badge">Today</span>
             </div>
             <span class="day-kcal" v-if="dayCalories(day) > 0">
@@ -134,6 +135,17 @@ function isToday(day: string): boolean {
   return days[dayIndex === 0 ? 6 : dayIndex - 1] === day
 }
 
+function dayDate(day: string): string {
+  const today = new Date()
+  const dayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1
+  const todayDayIdx = days.indexOf(days[dayIndex])
+  const targetIdx = days.indexOf(day)
+  const diff = targetIdx - todayDayIdx
+  const date = new Date(today)
+  date.setDate(today.getDate() + diff)
+  return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
+
 function macroPct(mealId: string, key: 'protein' | 'carbs' | 'fat', goal: number): number {
   const meal = store.getMealById(mealId)
   if (!meal) return 0
@@ -194,6 +206,11 @@ async function confirmArchive() {
   border: 2px solid #333;
   border-radius: 16px;
   overflow: hidden;
+}
+.day-date {
+  font-size: 12px;
+  color: #555;
+  font-weight: 400;
 }
 .day-header {
   display: flex;
