@@ -41,10 +41,32 @@
               class="planned-meal"
             >
               <div class="flex-1">
-                <p class="planned-meal-name">{{ store.getMealById(mealId)?.name }}</p>
-                <div class="flex items-center gap-2 mt-1">
-                  <span class="planned-pill">{{ store.getMealById(mealId)?.calories }} kcal</span>
-                  <span class="planned-pill">{{ store.getMealById(mealId)?.protein }}g protein</span>
+                <div class="flex justify-between items-center mb-2">
+                  <p class="planned-meal-name">{{ store.getMealById(mealId)?.name }}</p>
+                  <span class="kcal-badge">{{ store.getMealById(mealId)?.calories }} kcal</span>
+                </div>
+                <div class="macro-bars">
+                  <div class="macro-bar-row">
+                    <span class="macro-bar-label">Protein</span>
+                    <div class="macro-bar-track">
+                      <div class="macro-bar-fill protein" :style="{ width: macroPct(mealId, 'protein', store.settings.proteinGoal) + '%' }"></div>
+                    </div>
+                    <span class="macro-bar-val protein-text">{{ store.getMealById(mealId)?.protein }}g</span>
+                  </div>
+                  <div class="macro-bar-row">
+                    <span class="macro-bar-label">Carbs</span>
+                    <div class="macro-bar-track">
+                      <div class="macro-bar-fill carbs" :style="{ width: macroPct(mealId, 'carbs', store.settings.carbGoal) + '%' }"></div>
+                    </div>
+                    <span class="macro-bar-val carbs-text">{{ store.getMealById(mealId)?.carbs }}g</span>
+                  </div>
+                  <div class="macro-bar-row">
+                    <span class="macro-bar-label">Fat</span>
+                    <div class="macro-bar-track">
+                      <div class="macro-bar-fill fat" :style="{ width: macroPct(mealId, 'fat', store.settings.fatGoal) + '%' }"></div>
+                    </div>
+                    <span class="macro-bar-val fat-text">{{ store.getMealById(mealId)?.fat }}g</span>
+                  </div>
                 </div>
               </div>
               <button class="remove-btn" @click="store.removeMealFromDay(day, mealId)">
@@ -120,6 +142,12 @@ function isToday(day: string): boolean {
 
 function addToDay(day: string, mealId: string) {
   if (mealId) store.addMealToDay(day, mealId)
+}
+
+function macroPct(mealId: string, key: 'protein' | 'carbs' | 'fat', goal: number): number {
+  const meal = store.getMealById(mealId)
+  if (!meal) return 0
+  return Math.min(100, Math.round((meal[key] / goal) * 100))
 }
 
 const lastWeekMealCount = computed(() =>
@@ -268,4 +296,29 @@ async function confirmArchive() {
 .action-btn.warning:hover { background: #f9731615; }
 .action-btn.danger  { border-color: #ef4444; color: #ef4444; }
 .action-btn.danger:hover  { background: #ef444415; }
+
+.kcal-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #22c55e;
+  background: #22c55e15;
+  border: 1px solid #22c55e40;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.macro-bars { display: flex; flex-direction: column; gap: 5px; }
+.macro-bar-row { display: flex; align-items: center; gap: 8px; }
+.macro-bar-label { font-size: 11px; color: #666; width: 44px; flex-shrink: 0; }
+.macro-bar-track {
+  flex: 1; height: 6px; background: #2a2a2a;
+  border-radius: 999px; overflow: hidden; border: 1px solid #333;
+}
+.macro-bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
+.macro-bar-fill.protein { background: #a855f7; }
+.macro-bar-fill.carbs   { background: #f97316; }
+.macro-bar-fill.fat     { background: #3b82f6; }
+.macro-bar-val { font-size: 11px; font-weight: 600; width: 32px; text-align: right; flex-shrink: 0; }
+.protein-text { color: #a855f7; }
+.carbs-text   { color: #f97316; }
+.fat-text     { color: #3b82f6; }
 </style>
