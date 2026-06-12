@@ -4,71 +4,90 @@
       <IonToolbar>
         <IonTitle>Planner</IonTitle>
         <IonButtons slot="end">
-          <IonButton @click="store.autoFill()">Auto-fill</IonButton>
+          <IonButton @click="store.autoFill()">
+            <IonIcon :icon="sparkles" slot="start" />
+            Auto-fill
+          </IonButton>
         </IonButtons>
       </IonToolbar>
     </IonHeader>
     <IonContent class="ion-padding">
-      <div class="max-w-lg mx-auto">
+      <div class="max-w-lg mx-auto pb-6">
 
         <div v-if="lastWeekMealCount > 0" class="info-banner mb-4">
           <IonIcon :icon="informationCircle" />
-          Auto-fill avoids meals you had last week.
+          <span>Auto-fill avoids meals you had last week.</span>
         </div>
 
-        <div v-for="day in days" :key="day" class="mb-3">
+        <!-- Day cards -->
+        <div v-for="day in days" :key="day" class="day-card mb-4">
+
+          <!-- Day header -->
           <div class="day-header">
-            <span class="font-medium">{{ day }}</span>
-            <span class="text-sm text-gray-400">{{ dayCalories(day) > 0 ? dayCalories(day) + ' kcal' : '' }}</span>
-          </div>
-
-          <!-- Planned meals for this day -->
-          <div
-            v-for="mealId in store.currentWeek[day] ?? []"
-            :key="mealId"
-            class="meal-row"
-          >
-            <div class="flex-1">
-              <p class="font-medium text-sm">{{ store.getMealById(mealId)?.name }}</p>
-              <p class="text-xs text-gray-400">{{ store.getMealById(mealId)?.calories }} kcal</p>
+            <div class="flex items-center gap-2">
+              <span class="day-label" :class="isToday(day) ? 'today' : ''">{{ day }}</span>
+              <span v-if="isToday(day)" class="today-badge">Today</span>
             </div>
-            <IonButton fill="clear" size="small" color="danger" @click="store.removeMealFromDay(day, mealId)">
-              <IonIcon :icon="closeCircle" />
-            </IonButton>
+            <span class="day-kcal" v-if="dayCalories(day) > 0">
+              {{ dayCalories(day).toLocaleString() }} kcal
+            </span>
           </div>
 
-          <!-- Empty state -->
-          <div v-if="!store.currentWeek[day]?.length" class="empty-day">
-            No meals planned
-          </div>
-
-          <!-- Add meal to day -->
-          <IonSelect
-            placeholder="+ Add meal"
-            class="add-select"
-            :value="null"
-            @ionChange="(e: CustomEvent) => addToDay(day, e.detail.value)"
-          >
-            <IonSelectOption
-              v-for="meal in store.meals"
-              :key="meal.id"
-              :value="meal.id"
+          <!-- Planned meals -->
+          <div class="meals-area">
+            <div
+              v-for="mealId in store.currentWeek[day] ?? []"
+              :key="mealId"
+              class="planned-meal"
             >
-              {{ meal.name }} ({{ meal.calories }} kcal)
-            </IonSelectOption>
-          </IonSelect>
+              <div class="flex-1">
+                <p class="planned-meal-name">{{ store.getMealById(mealId)?.name }}</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="planned-pill">{{ store.getMealById(mealId)?.calories }} kcal</span>
+                  <span class="planned-pill">{{ store.getMealById(mealId)?.protein }}g protein</span>
+                </div>
+              </div>
+              <button class="remove-btn" @click="store.removeMealFromDay(day, mealId)">
+                <IonIcon :icon="closeCircle" />
+              </button>
+            </div>
+
+            <div v-if="!store.currentWeek[day]?.length" class="empty-day">
+              No meals planned yet
+            </div>
+          </div>
+
+          <!-- Add meal select -->
+          <div class="add-row">
+            <IonSelect
+              placeholder="＋ Add a meal"
+              interface="action-sheet"
+              class="add-select"
+              :value="null"
+              @ionChange="(e: CustomEvent) => addToDay(day, e.detail.value)"
+            >
+              <IonSelectOption
+                v-for="meal in store.meals"
+                :key="meal.id"
+                :value="meal.id"
+              >
+                {{ meal.name }} — {{ meal.calories }} kcal
+              </IonSelectOption>
+            </IonSelect>
+          </div>
+
         </div>
 
         <!-- Week actions -->
-        <div class="flex gap-3 mt-4 mb-6">
-          <IonButton expand="block" fill="outline" color="warning" class="flex-1" @click="confirmArchive">
-            <IonIcon :icon="archive" slot="start" />
+        <div class="flex gap-3 mt-2">
+          <button class="action-btn warning flex-1" @click="confirmArchive">
+            <IonIcon :icon="archive" />
             Archive week
-          </IonButton>
-          <IonButton expand="block" fill="outline" color="danger" class="flex-1" @click="confirmClear">
-            <IonIcon :icon="trash" slot="start" />
+          </button>
+          <button class="action-btn danger flex-1" @click="confirmClear">
+            <IonIcon :icon="trash" />
             Clear week
-          </IonButton>
+          </button>
         </div>
 
       </div>
@@ -83,7 +102,7 @@ import {
   alertController
 } from '@ionic/vue'
 import { computed } from 'vue'
-import { closeCircle, trash, archive, informationCircle } from 'ionicons/icons'
+import { closeCircle, trash, archive, informationCircle, sparkles } from 'ionicons/icons'
 import { useMealStore } from '@/stores/useMealStore'
 
 const store = useMealStore()
@@ -92,6 +111,11 @@ const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 function dayCalories(day: string): number {
   const ids = store.currentWeek[day] ?? []
   return ids.reduce((sum, id) => sum + (store.getMealById(id)?.calories ?? 0), 0)
+}
+
+function isToday(day: string): boolean {
+  const dayIndex = new Date().getDay()
+  return days[dayIndex === 0 ? 6 : dayIndex - 1] === day
 }
 
 function addToDay(day: string, mealId: string) {
@@ -117,7 +141,7 @@ async function confirmClear() {
 async function confirmArchive() {
   const alert = await alertController.create({
     header: 'Archive week',
-    message: 'This saves the current week as last week and clears the planner for a fresh start.',
+    message: 'Saves this week as last week and clears the planner.',
     buttons: [
       { text: 'Cancel', role: 'cancel' },
       { text: 'Archive', handler: () => store.archiveWeek() }
@@ -128,40 +152,120 @@ async function confirmArchive() {
 </script>
 
 <style scoped>
+.day-card {
+  background: #1e1e1e;
+  border: 2px solid #333;
+  border-radius: 16px;
+  overflow: hidden;
+}
 .day-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
-  border-bottom: 0.5px solid var(--ion-color-step-150);
-  margin-bottom: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #2a2a2a;
+  background: #252525;
 }
-.meal-row {
+.day-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+.day-label.today { color: #22c55e; }
+.today-badge {
+  font-size: 10px;
+  font-weight: 600;
+  background: #22c55e20;
+  color: #22c55e;
+  border: 1px solid #22c55e;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.day-kcal {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+}
+.meals-area {
+  padding: 10px 16px;
+}
+.planned-meal {
   display: flex;
   align-items: center;
-  background: var(--ion-color-step-50);
-  border-radius: 8px;
-  padding: 8px 10px;
-  margin-bottom: 6px;
+  gap: 10px;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
 }
+.planned-meal-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+}
+.planned-pill {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #333;
+  color: #aaa;
+  border: 1px solid #444;
+}
+.remove-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #ef4444;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  opacity: 0.7;
+}
+.remove-btn:hover { opacity: 1; }
 .empty-day {
   font-size: 13px;
-  color: var(--ion-color-medium);
-  padding: 6px 0;
+  color: #555;
   font-style: italic;
+  padding: 6px 0 4px;
+}
+.add-row {
+  padding: 0 16px 12px;
+  border-top: 1px solid #2a2a2a;
 }
 .add-select {
   font-size: 13px;
-  margin-top: 4px;
+  color: #666;
+  margin-top: 8px;
 }
 .info-banner {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  padding: 10px 12px;
-  background: var(--ion-color-primary-tint);
-  border-radius: 8px;
-  color: var(--ion-color-primary);
+  padding: 10px 14px;
+  background: #1a2a3a;
+  border: 1.5px solid #1e4a7a;
+  border-radius: 10px;
+  color: #60a5fa;
 }
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid;
+  background: transparent;
+  transition: background 0.15s;
+}
+.action-btn.warning { border-color: #f97316; color: #f97316; }
+.action-btn.warning:hover { background: #f9731615; }
+.action-btn.danger  { border-color: #ef4444; color: #ef4444; }
+.action-btn.danger:hover  { background: #ef444415; }
 </style>
