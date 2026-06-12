@@ -35,7 +35,7 @@
         </div>
 
         <!-- Today's calories -->
-        <div class="dash-card mb-3">
+        <div class="dash-card mb-4">
           <p class="card-title">Today's intake</p>
           <MacroBar
             label="Calories"
@@ -47,15 +47,15 @@
           />
         </div>
 
-        <!-- Weekly macros — compared against daily goal × 7 -->
-        <div class="dash-card mb-3">
+        <!-- Weekly macros -->
+        <div class="dash-card mb-4">
           <p class="card-title">Weekly macros</p>
           <MacroBar label="Protein" :value="store.weeklyProtein" :goal="store.settings.proteinGoal * 7" unit="g" color="#a855f7" overColor="#ef4444" />
-          <MacroBar label="Carbs" :value="store.weeklyCarbs" :goal="store.settings.carbGoal * 7" unit="g" color="#f97316" overColor="#ef4444" />
-          <MacroBar label="Fat" :value="store.weeklyFat" :goal="store.settings.fatGoal * 7" unit="g" color="#3b82f6" overColor="#ef4444" />
+          <MacroBar label="Carbs"   :value="store.weeklyCarbs"   :goal="store.settings.carbGoal * 7"    unit="g" color="#f97316" overColor="#ef4444" />
+          <MacroBar label="Fat"     :value="store.weeklyFat"     :goal="store.settings.fatGoal * 7"     unit="g" color="#3b82f6" overColor="#ef4444" />
         </div>
 
-        <!-- Weekly calorie chart -->
+        <!-- Weekly chart -->
         <div class="dash-card">
           <p class="card-title">This week at a glance</p>
           <div class="flex gap-2 items-end justify-between mt-2" style="height: 120px">
@@ -64,8 +64,11 @@
               :key="day"
               class="flex flex-col items-center flex-1 gap-1 h-full"
             >
-              <span class="text-xs font-medium leading-none mb-1" style="min-height: 14px"
-                :class="dayCalories(day) > store.settings.calorieGoal ? 'text-red-400' : dayCalories(day) > 0 ? 'text-green-400' : 'text-transparent'">
+              <span
+                class="text-xs font-semibold leading-none mb-1"
+                style="min-height: 14px"
+                :class="dayCalories(day) > store.settings.calorieGoal ? 'text-red-400' : dayCalories(day) > 0 ? 'text-green-400' : 'text-transparent'"
+              >
                 {{ dayCalories(day) > 0 ? dayCalories(day) : '0' }}
               </span>
               <div class="w-full flex items-end flex-1">
@@ -74,27 +77,31 @@
                   :style="{
                     height: barHeight(day) + '%',
                     minHeight: dayCalories(day) > 0 ? '6px' : '2px',
-                    background: dayCalories(day) > store.settings.calorieGoal
-                      ? '#ef4444'
-                      : dayCalories(day) > 0
-                      ? '#22c55e'
-                      : 'var(--ion-color-step-100)'
+                    background: dayCalories(day) > store.settings.calorieGoal ? '#ef4444'
+                      : dayCalories(day) > 0 ? '#22c55e'
+                      : '#2a2a2a'
                   }"
                 ></div>
               </div>
-              <span class="text-xs leading-none mt-1"
-                :class="isToday(day) ? 'text-white font-semibold' : 'text-gray-500'">
-                {{ day.slice(0,1) }}
+              <span
+                class="text-xs leading-none mt-1 font-semibold"
+                :class="isToday(day) ? 'text-white' : 'text-gray-600'"
+              >
+                {{ day.slice(0, 1) }}
               </span>
             </div>
           </div>
-          <div class="flex items-center gap-2 mt-3 pt-3" style="border-top: 0.5px solid var(--ion-color-step-150)">
-            <span class="text-xs text-gray-500">Daily goal: {{ store.settings.calorieGoal.toLocaleString() }} kcal</span>
-            <div class="flex items-center gap-1 ml-auto">
-              <span class="legend-dot" style="background:#22c55e"></span>
-              <span class="text-xs text-gray-500">On track</span>
-              <span class="legend-dot ml-2" style="background:#ef4444"></span>
-              <span class="text-xs text-gray-500">Over</span>
+          <div class="chart-footer">
+            <span class="text-xs text-gray-600">Daily goal: {{ store.settings.calorieGoal.toLocaleString() }} kcal</span>
+            <div class="flex items-center gap-3">
+              <span class="legend-item">
+                <span class="legend-dot" style="background:#22c55e"></span>
+                On track
+              </span>
+              <span class="legend-item">
+                <span class="legend-dot" style="background:#ef4444"></span>
+                Over
+              </span>
             </div>
           </div>
         </div>
@@ -105,10 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  IonPage, IonHeader, IonToolbar, IonTitle,
-  IonContent
-} from '@ionic/vue'
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/vue'
 import { computed } from 'vue'
 import { useMealStore } from '@/stores/useMealStore'
 import MacroBar from '@/components/MacroBar.vue'
@@ -140,45 +144,48 @@ const todayCalories = computed(() => {
 
 <style scoped>
 .dash-card {
-  background: var(--ion-card-background);
-  border: 1.5px solid var(--ion-color-step-300);
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
+  background: #1e1e1e;
+  border: 2px solid #333;
+  border-radius: 16px;
+  padding: 16px 18px;
 }
 .card-title {
   font-size: 15px;
-  font-weight: 500;
-  margin-bottom: 12px;
-  color: var(--ion-text-color);
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 14px;
 }
 .metric-card {
-  background: var(--ion-card-background);
-  border: 1.5px solid var(--ion-color-step-300);
-  border-radius: 12px;
+  background: #1e1e1e;
+  border: 2px solid #333;
+  border-radius: 16px;
   padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
 }
-.metric-value {
-  font-size: 26px;
-  font-weight: 600;
-  line-height: 1.2;
+.metric-value { font-size: 26px; font-weight: 700; line-height: 1.2; }
+.metric-value.ok      { color: #22c55e; }
+.metric-value.over    { color: #ef4444; }
+.metric-value.neutral { color: #3b82f6; }
+.metric-value.purple  { color: #a855f7; }
+.metric-label { font-size: 12px; color: #666; margin-top: 4px; }
+.metric-sub   { font-size: 11px; color: #444; margin-top: 2px; }
+.chart-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #2a2a2a;
 }
-.metric-value.ok     { color: #22c55e; }
-.metric-value.over   { color: #ef4444; }
-.metric-value.neutral{ color: #3b82f6; }
-.metric-value.purple { color: #a855f7; }
-.metric-label {
-  font-size: 12px;
-  color: var(--ion-color-medium);
-  margin-top: 3px;
-}
-.metric-sub {
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
-  color: var(--ion-color-step-400);
-  margin-top: 2px;
+  color: #666;
 }
 .legend-dot {
   width: 8px;
