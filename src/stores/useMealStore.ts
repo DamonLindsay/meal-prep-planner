@@ -79,6 +79,20 @@ export const useMealStore = defineStore('meals', () => {
     persist()
   }
 
+  function addMealToLastWeek(day: string, mealId: string) {
+  if (!lastWeek.value[day]) lastWeek.value[day] = []
+  if (!lastWeek.value[day].includes(mealId)) {
+    lastWeek.value[day].push(mealId)
+  }
+  persist()
+}
+
+function removeMealFromLastWeek(day: string, mealId: string) {
+  if (!lastWeek.value[day]) return
+  lastWeek.value[day] = lastWeek.value[day].filter(id => id !== mealId)
+  persist()
+}
+
   function clearWeek() {
     currentWeek.value = {}
     persist()
@@ -146,7 +160,8 @@ export const useMealStore = defineStore('meals', () => {
   return {
     meals, currentWeek, lastWeek, settings,
     addMeal, updateMeal, deleteMeal, getMealById,
-    addMealToDay, removeMealFromDay, clearWeek, archiveWeek, autoFill,
+    addMealToDay, removeMealFromDay, addMealToLastWeek, removeMealFromLastWeek,
+    clearWeek, archiveWeek, autoFill,
     updateSettings,
     totalMealsThisWeek, weeklyCalories, weeklyProtein, weeklyCarbs, weeklyFat
   }

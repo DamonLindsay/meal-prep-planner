@@ -4,7 +4,7 @@
       <IonToolbar>
         <IonTitle>Planner</IonTitle>
         <IonButtons slot="end">
-          <IonButton @click="store.autoFill()">
+          <IonButton v-if="viewingCurrentWeek" @click="store.autoFill()">
             <IonIcon :icon="sparkles" slot="start" />
             Auto-fill
           </IonButton>
@@ -14,18 +14,36 @@
     <IonContent class="ion-padding">
       <div class="max-w-lg mx-auto pb-6">
 
-        <div v-if="lastWeekMealCount > 0" class="info-banner mb-4">
-          <IonIcon :icon="informationCircle" />
-          <span>Auto-fill avoids meals you had last week.</span>
+        <!-- Week toggle -->
+        <div class="week-toggle mb-4">
+          <button
+            class="toggle-btn"
+            :class="viewingCurrentWeek ? 'active' : ''"
+            @click="viewingCurrentWeek = true"
+          >
+            This week
+          </button>
+          <button
+            class="toggle-btn"
+            :class="!viewingCurrentWeek ? 'active' : ''"
+            @click="viewingCurrentWeek = false"
+          >
+            Last week
+          </button>
+        </div>
+
+        <div v-if="!viewingCurrentWeek && lastWeekMealCount === 0" class="empty-week">
+          <IonIcon :icon="calendarOutline" style="font-size:36px;opacity:0.3" />
+          <p class="mt-2 text-gray-500 text-sm">No meals archived yet. Use "Archive week" to save this week.</p>
         </div>
 
         <div v-for="day in days" :key="day" class="day-card mb-4">
 
           <div class="day-header">
             <div class="flex items-center gap-2">
-              <span class="day-label" :class="isToday(day) ? 'today' : ''">{{ day }}</span>
+              <span class="day-label" :class="isToday(day) && viewingCurrentWeek ? 'today' : ''">{{ day }}</span>
               <span class="day-date">· {{ dayDate(day) }}</span>
-              <span v-if="isToday(day)" class="today-badge">Today</span>
+              <span v-if="isToday(day) && viewingCurrentWeek" class="today-badge">Today</span>
             </div>
             <span class="day-kcal" v-if="dayCalories(day) > 0">
               {{ dayCalories(day).toLocaleString() }} kcal
@@ -34,7 +52,7 @@
 
           <div class="meals-area">
             <div
-              v-for="mealId in store.currentWeek[day] ?? []"
+              v-for="mealId in weekData[day] ?? []"
               :key="mealId"
               class="planned-meal"
               @click="openPicker(day, mealId)"
@@ -68,17 +86,17 @@
                   </div>
                 </div>
               </div>
-              <button class="remove-btn" @click.stop="store.removeMealFromDay(day, mealId)">
+              <button class="remove-btn" @click.stop="removeMeal(day, mealId)">
                 <IonIcon :icon="closeCircle" />
               </button>
             </div>
 
-            <div v-if="!store.currentWeek[day]?.length" class="empty-day">
+            <div v-if="!weekData[day]?.length" class="empty-day">
               No meals planned yet
             </div>
           </div>
 
-          <div class="add-row" v-if="!store.currentWeek[day]?.length">
+          <div class="add-row" v-if="!weekData[day]?.length">
             <button class="add-meal-btn" @click="openPicker(day, null)">
               <IonIcon :icon="addCircleOutline" /> Add a meal
             </button>
@@ -86,7 +104,8 @@
 
         </div>
 
-        <div class="flex gap-3 mt-2">
+        <!-- Actions — current week only -->
+        <div v-if="viewingCurrentWeek" class="flex gap-3 mt-2">
           <button class="action-btn warning flex-1" @click="confirmArchive">
             <IonIcon :icon="archive" /> Archive week
           </button>
@@ -115,18 +134,23 @@ import {
   alertController
 } from '@ionic/vue'
 import { ref, computed } from 'vue'
-import { closeCircle, trash, archive, informationCircle, sparkles, addCircleOutline } from 'ionicons/icons'
+import { closeCircle, trash, archive, informationCircle, sparkles, addCircleOutline, calendarOutline } from 'ionicons/icons'
 import { useMealStore } from '@/stores/useMealStore'
 
 const store = useMealStore()
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const viewingCurrentWeek = ref(true)
 
 const pickerOpen = ref(false)
 const pickerDay = ref('')
 const pickerReplacingId = ref<string | null>(null)
 
+const weekData = computed(() =>
+  viewingCurrentWeek.value ? store.currentWeek : store.lastWeek
+)
+
 function dayCalories(day: string): number {
-  const ids = store.currentWeek[day] ?? []
+  const ids = weekData.value[day] ?? []
   return ids.reduce((sum, id) => sum + (store.getMealById(id)?.calories ?? 0), 0)
 }
 
@@ -138,9 +162,8 @@ function isToday(day: string): boolean {
 function dayDate(day: string): string {
   const today = new Date()
   const dayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1
-  const todayDayIdx = days.indexOf(days[dayIndex])
   const targetIdx = days.indexOf(day)
-  const diff = targetIdx - todayDayIdx
+  const diff = targetIdx - dayIndex + (viewingCurrentWeek.value ? 0 : -7)
   const date = new Date(today)
   date.setDate(today.getDate() + diff)
   return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
@@ -158,6 +181,14 @@ function openPicker(day: string, replacingId: string | null) {
   pickerOpen.value = true
 }
 
+function removeMeal(day: string, mealId: string) {
+  if (viewingCurrentWeek.value) {
+    store.removeMealFromDay(day, mealId)
+  } else {
+    store.removeMealFromLastWeek(day, mealId)
+  }
+}
+
 const lastWeekMealCount = computed(() =>
   Object.values(store.lastWeek).flat().length
 )
@@ -167,9 +198,13 @@ const pickerButtons = computed(() => [
     text: `${meal.name} — ${meal.calories} kcal`,
     handler: () => {
       if (pickerReplacingId.value) {
-        store.removeMealFromDay(pickerDay.value, pickerReplacingId.value)
+        removeMeal(pickerDay.value, pickerReplacingId.value)
       }
-      store.addMealToDay(pickerDay.value, meal.id)
+      if (viewingCurrentWeek.value) {
+        store.addMealToDay(pickerDay.value, meal.id)
+      } else {
+        store.addMealToLastWeek(pickerDay.value, meal.id)
+      }
     }
   })),
   { text: 'Cancel', role: 'cancel' }
@@ -201,17 +236,39 @@ async function confirmArchive() {
 </script>
 
 <style scoped>
+.week-toggle {
+  display: flex;
+  background: #1e1e1e;
+  border: 2px solid #333;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+.toggle-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.toggle-btn.active {
+  background: #333;
+  color: #fff;
+}
+.empty-week {
+  text-align: center;
+  padding: 2rem 1rem;
+}
 .day-card {
   background: #1e1e1e;
   border: 2px solid #333;
   border-radius: 16px;
   overflow: hidden;
-}
-.day-date {
-  font-size: 12px;
-  color: #666;
-  font-weight: 400;
-  margin-left: 4px;
 }
 .day-header {
   display: flex;
@@ -223,6 +280,7 @@ async function confirmArchive() {
 }
 .day-label { font-size: 15px; font-weight: 600; color: #fff; }
 .day-label.today { color: #22c55e; }
+.day-date { font-size: 12px; color: #666; font-weight: 400; margin-left: 4px; }
 .today-badge {
   font-size: 10px; font-weight: 600;
   background: #22c55e20; color: #22c55e;
