@@ -1,0 +1,7 @@
+{
+  "name": "meal-prep-planner",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
