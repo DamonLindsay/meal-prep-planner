@@ -77,7 +77,7 @@
             </div>
           </div>
 
-          <div class="add-row">
+          <div class="add-row" v-if="!store.currentWeek[day]?.length">
             <button class="add-meal-btn" @click="openPicker(day, null)">
               <IonIcon :icon="addCircleOutline" /> Add a meal
             </button>
