@@ -141,7 +141,7 @@ const todayCalories = computed(() => {
 <style scoped>
 .dash-card {
   background: var(--ion-card-background);
-  border: 0.5px solid var(--ion-color-step-150);
+  border: 1.5px solid var(--ion-color-step-300);
   border-radius: 12px;
   padding: 1rem 1.25rem;
 }
@@ -153,7 +153,7 @@ const todayCalories = computed(() => {
 }
 .metric-card {
   background: var(--ion-card-background);
-  border: 0.5px solid var(--ion-color-step-150);
+  border: 1.5px solid var(--ion-color-step-300);
   border-radius: 12px;
   padding: 1rem;
   display: flex;
